@@ -1,0 +1,45 @@
+<html>
+	<head>
+		<title> Hello </title>
+		<script type="text/javascript" src="socketio.js"></script>
+		<script type="text/javascript" src="physics.js"></script>
+		<style type="text/css">
+			.info {
+				font-size: 20px;
+				text-align: center
+			}
+			body {
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				-khtml-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+			}
+		</style>
+	</head>
+	<body>
+		<table width="100%" height="100%">
+			<tr>
+				<td align="center" valign="middle">
+					<div id="join" style="display:block;">
+						Name: <input id="name" type="text" /><br>
+						<input id="red" type="button" value="Join Red" />
+						<input id="blue" type="button" value="Join Blue" />
+					</div>
+					<div id="game" style="display:none;">
+						<table id="table">
+							<tr>
+								<td id="redScore" style="font-size:40px;color:red;text-align:center;"></td>
+								<td id="blueScore" style="font-size:40px;color:blue;text-align:center;"></td>
+							</tr>
+						</table>
+						<br>
+						<canvas id="canvas" style="border:6px solid black;"></canvas>
+					</div>
+				</td>
+			</tr>
+		</table>
+		<script type="text/javascript" src="script.js"></script>
+	</body>
+</html>
