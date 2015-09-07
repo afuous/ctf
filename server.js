@@ -199,16 +199,6 @@ io.listen(server).on("connection", function(socket) {
 			update();
 		}
 	});
-	socket.on("joinBlue", function() {
-		blue.push({
-			socket: socket,
-			x: game.width / 2,
-			y: game.height / 2,
-			xDir: 0,
-			yDir: 0
-		});
-		update();
-	});
 	
 	socket.on("disconnect", function() {
 		red = red.filter(player => socket != player.socket);
