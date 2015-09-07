@@ -63,6 +63,9 @@ function update() {
 				team: p.team,
 				frozen: p.frozen,
 				hasFlag: p.hasFlag,
+				scores: p.scores,
+				tags: p.tags,
+				tagged: p.tagged,
 				self: p == player
 			})),
 			redScore: redScore,
@@ -116,6 +119,7 @@ function checkCollisions() {
 		if(redPlayer.hasFlag && redPlayer.x < game.width / 2) {
 			redPlayer.hasFlag = false;
 			redScore++;
+			redPlayer.scores++;
 			update();
 		}
 	}
@@ -129,6 +133,7 @@ function checkCollisions() {
 		if(bluePlayer.hasFlag && bluePlayer.x > game.width / 2) {
 			bluePlayer.hasFlag = false;
 			blueScore++;
+			bluePlayer.scores++;
 			update();
 		}
 	}
@@ -141,6 +146,8 @@ function checkCollisions() {
 					redPlayer.dx = redPlayer.dy = 0;
 					redPlayer.frozen = game.freezeTime;
 					redPlayer.hasFlag = false;
+					redPlayer.tagged++;
+					bluePlayer.tags++;
 				}
 				else if(redPlayer.x + bluePlayer.x < game.width && redPlayer.frozen == 0) {
 					bluePlayer.x = game.width - game.flag.offset / 2;
@@ -148,6 +155,8 @@ function checkCollisions() {
 					bluePlayer.dx = bluePlayer.dy = 0;
 					bluePlayer.frozen = game.freezeTime;
 					bluePlayer.hasFlag = false;
+					bluePlayer.tagged++;
+					redPlayer.tags++;
 				}
 				update();
 			}
@@ -178,14 +187,16 @@ io.listen(server).on("connection", function(socket) {
 				team: obj.team == RED ? RED : BLUE,
 				frozen: 0,
 				hasFlag: false,
-				touching: null
+				touching: null,
+				scores: 0,
+				tags: 0,
+				tagged: 0
 			});
 			socket.emit("start", {
 				valid: true,
 				game: game
 			});
 			update();
-			//process.stdout.write(String.fromCharCode(7));
 		}
 	});
 	socket.on("joinBlue", function() {

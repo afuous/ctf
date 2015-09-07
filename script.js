@@ -101,6 +101,7 @@
 			dgid("table").width = game.width;
 			dgid("join").style.display = "none";
 			dgid("game").style.display = "block";
+			dgid("stats").style.display = "block";
 			clearInterval(interval);
 			interval = setInterval(function() {
 				while(lastUpdate + 10 < Date.now()) {
@@ -119,6 +120,7 @@
 	socket.on("disconnect", function() {
 		dgid("join").style.display = "block";
 		dgid("game").style.display = "none";
+		dgid("stats").style.display = "none";
 		clearInterval(interval);
 		playing = false;
 	});
@@ -160,6 +162,8 @@
 		ctx.fillStyle = "black";
 		if(!redFlagTaken) ctx.fillCircle(game.flag.offset + game.flag.radius, game.height / 2, game.flag.radius / 2);
 		if(!blueFlagTaken) ctx.fillCircle(game.width - game.flag.offset - game.flag.radius, game.height / 2, game.flag.radius / 2);
+		var table = document.createElement("table");
+		table.appendChild(getRow(["", "Scores", "Tags", "Tagged"]));
 		for(var i = 0; i < players.length; i++) {
 			var player = players[i];
 			ctx.fillStyle = player.self ? "black" : (player.team == RED ? "red" : "blue");
@@ -197,8 +201,23 @@
 				}
 				ctx.fillText(player.name, x, y);
 			}
+			table.appendChild(getRow([player.name, player.scores, player.tags, player.tagged]));
 		}
+		dgid("stats").innerHTML = "";
+		dgid("stats").appendChild(table);
 		dgid("redScore").innerHTML = redScore;
 		dgid("blueScore").innerHTML = blueScore;
+	}
+	
+	function getRow(cells) {
+		var tr = document.createElement("tr");
+		for(var i = 0; i < cells.length; i++) {
+			var td = document.createElement("td");
+			td.width = "100";
+			td.style.fontSize = "16px";
+			td.innerHTML = String(cells[i]).replace("<", "&lt").replace(">", "&gt");
+			tr.appendChild(td);
+		}
+		return tr;
 	}
 })();
