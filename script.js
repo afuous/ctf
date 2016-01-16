@@ -163,7 +163,7 @@
 		if(!redFlagTaken) ctx.fillCircle(game.flag.offset + game.flag.radius, game.height / 2, game.flag.radius / 2);
 		if(!blueFlagTaken) ctx.fillCircle(game.width - game.flag.offset - game.flag.radius, game.height / 2, game.flag.radius / 2);
 		var table = document.createElement("table");
-		table.appendChild(getRow(["", "Scores", "Tags", "Tagged"]));
+		table.appendChild(getRow(["", "Scores", "Tags", "Tagged", "Rating"]));
 		for(var i = 0; i < players.length; i++) {
 			var player = players[i];
 			ctx.fillStyle = player.self ? "black" : (player.team == RED ? "red" : "blue");
@@ -201,7 +201,8 @@
 				}
 				ctx.fillText(player.name, x, y);
 			}
-			table.appendChild(getRow([player.name, player.scores, player.tags, player.tagged]));
+			rating = 2 * player.scores + player.tags - 2 * player.tagged;
+			table.appendChild(getRow([player.name, player.scores, player.tags, player.tagged, rating], player.team == RED ? "#ffdddd" : "#ddddff"));
 		}
 		dgid("stats").innerHTML = "";
 		dgid("stats").appendChild(table);
@@ -209,8 +210,10 @@
 		dgid("blueScore").innerHTML = blueScore;
 	}
 	
-	function getRow(cells) {
+	function getRow(cells, background) {
+		if(!background) background = "white";
 		var tr = document.createElement("tr");
+		tr.style.backgroundColor = background;
 		for(var i = 0; i < cells.length; i++) {
 			var td = document.createElement("td");
 			td.width = "100";
