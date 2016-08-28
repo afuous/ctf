@@ -26,7 +26,7 @@ function run(players, game) {
 			player.x = game.width - game.radius;
 			player.dx *= -game.bounce;
 		}
-		
+
 		if(player.vert == UP) {
 			player.dy -= player.dy < 0 ? game.accel : game.decel;
 		}

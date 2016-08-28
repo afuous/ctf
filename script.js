@@ -2,38 +2,38 @@
 	var dgid = function(id) {
 		return document.getElementById(id);
 	};
-	
+
 	var socket = io.connect();
-	
+
 	var canvas = dgid("canvas");
 	var ctx = canvas.getContext("2d");
-	
+
 	ctx.fillCircle = function(x, y, radius) {
 		ctx.beginPath();
 		ctx.arc(x, y, radius, 0, Math.PI * 2);
 		ctx.fill();
 	};
-	
+
 	var LEFT = 0;
 	var RIGHT = 1;
 	var UP = 2;
 	var DOWN = 3;
 	var CENTER = 4;
-	
+
 	var RED = 0;
 	var BLUE = 1;
-	
+
 	var playing = false;
-	
+
 	var redScore = 0;
 	var blueScore = 0;
-	
+
 	var lastUpdate;
-	
+
 	document.oncontextmenu = function() {
 		return false;
 	}
-	
+
 	window.onkeydown = function(event) {
 		if(!playing) return;
 		var key = (event || window.event).keyCode;
@@ -74,7 +74,7 @@
 			socket.emit("keyUp", DOWN);
 		}
 	};
-	
+
 	dgid("red").onclick = function() {
 		socket.emit("join", {
 			name: dgid("name").value,
@@ -89,9 +89,9 @@
 		});
 		return false;
 	};
-	
+
 	dgid("name").focus();
-	
+
 	socket.on("start", function(obj) {
 		if(obj.valid) {
 			playing = true;
@@ -116,7 +116,7 @@
 			alert("Duplicate name");
 		}
 	});
-	
+
 	socket.on("disconnect", function() {
 		dgid("join").style.display = "block";
 		dgid("game").style.display = "none";
@@ -124,18 +124,18 @@
 		clearInterval(interval);
 		playing = false;
 	});
-	
+
 	socket.on("update", function(obj) {
 		players = obj.players;
 		redScore = obj.redScore;
 		blueScore = obj.blueScore;
 		lastUpdate = lastUpdate;
 	});
-	
+
 	var players = [];
 	var interval;
 	var game;
-	
+
 	function getSelf() {
 		for(var i = 0; i < players.length; i++) {
 			if(players[i].self) {
@@ -143,7 +143,7 @@
 			}
 		}
 	}
-	
+
 	function draw() {
 		ctx.clearRect(0, 0, game.width, game.height);
 		ctx.fillStyle = "black";
@@ -209,7 +209,7 @@
 		dgid("redScore").innerHTML = redScore;
 		dgid("blueScore").innerHTML = blueScore;
 	}
-	
+
 	function getRow(cells, background) {
 		if(!background) background = "white";
 		var tr = document.createElement("tr");

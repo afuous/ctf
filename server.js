@@ -8,6 +8,7 @@ let physics = require("./physics");
 
 let server = http.createServer(function(req, res) {
 	let path = url.parse(req.url).pathname.substring(1);
+
 	if(path == "") {
 		res.end(fs.readFileSync("index.html"));
 	}
@@ -199,7 +200,7 @@ io.listen(server).on("connection", function(socket) {
 			update();
 		}
 	});
-	
+
 	socket.on("disconnect", function() {
 		red = red.filter(player => socket != player.socket);
 		blue = blue.filter(player => socket != player.socket);
@@ -209,14 +210,14 @@ io.listen(server).on("connection", function(socket) {
 		}
 		update();
 	});
-	
+
 	socket.on("keyDown", function(dir) {
 		for(let player of red.concat(blue).filter(player => socket == player.socket)) {
 			physics.keyDown(player, dir);
 		}
 		update();
 	});
-	
+
 	socket.on("keyUp", function(dir) {
 		for(let player of red.concat(blue).filter(player => socket == player.socket)) {
 			physics.keyUp(player, dir);
