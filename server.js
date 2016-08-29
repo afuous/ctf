@@ -6,16 +6,24 @@ let fs = require("fs");
 let url = require("url");
 let physics = require("./physics");
 
+let staticPages = {
+	"": "index.html",
+	"script.js": "script.js",
+	"physics.js": "physics.js",
+	"socketio.js": "socketio.js",
+};
+
 let server = http.createServer(function(req, res) {
 	let path = url.parse(req.url).pathname.substring(1);
 
-	if(path == "") {
-		res.end(fs.readFileSync("index.html"));
+	if (staticPages[path]) {
+		fs.createReadStream(require("path").join(__dirname, staticPages[path])).pipe(res);
+	} else {
+		res.writeHead(400, {
+			"Content-type": "text/plain",
+		});
+		res.end("Not found");
 	}
-	else if(~["script.js", "socketio.js", "physics.js"].indexOf(path)) {
-		res.end(fs.readFileSync(path));
-	}
-	else res.end("404");
 });
 server.listen(process.argv[2] || 80);
 
@@ -30,7 +38,8 @@ const game = {
 		offset: 100,
 		radius: 70
 	},
-	freezeTime: 5000
+	freezeTime: 5000,
+	tickTime: 10, // ms
 }
 
 const LEFT = 0;
@@ -48,7 +57,7 @@ let blue = [];
 let redScore = 0;
 let blueScore = 0;
 
-var lastUpdate = Date.now();
+let lastUpdate = Date.now();
 
 function update() {
 	for(let player of red.concat(blue)) {
@@ -67,29 +76,29 @@ function update() {
 				scores: p.scores,
 				tags: p.tags,
 				tagged: p.tagged,
-				self: p == player
+				isSelf: p == player,
 			})),
 			redScore: redScore,
 			blueScore: blueScore,
-			lastUpdate: lastUpdate
+			lastUpdate: lastUpdate,
 		});
 	}
 }
 
 setInterval(function() {
-	while(lastUpdate + 10 < Date.now()) {
+	while(lastUpdate + game.tickTime < Date.now()) {
 		physics.run(red.concat(blue), game);
 		checkCollisions();
-		lastUpdate += 10;
+		lastUpdate += game.tickTime;
 	}
-}, 10);
+}, game.tickTime);
 
 function dist(a, b) {
 	return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
 }
 
 function checkCollisions() {
-	var transfer = function(team) {
+	let transfer = function(team) {
 		for(let player1 of team) {
 			for(let player2 of team) {
 				if(player1 != player2) {
@@ -167,12 +176,12 @@ function checkCollisions() {
 
 io.listen(server).on("connection", function(socket) {
 	socket.on("join", function(obj) {
-		var name = obj.name.trim();
+		let name = obj.name.trim();
 		if(name.length == 0 || red.concat(blue).some(player => socket == player.socket)) return;
 		name = name.substring(0, 25);
 		if(red.concat(blue).some(player => name.toLowerCase() == player.name.toLowerCase())) {
 			socket.emit("start", {
-				valid: false
+				valid: false,
 			});
 		}
 		else {
@@ -191,11 +200,11 @@ io.listen(server).on("connection", function(socket) {
 				touching: null,
 				scores: 0,
 				tags: 0,
-				tagged: 0
+				tagged: 0,
 			});
 			socket.emit("start", {
 				valid: true,
-				game: game
+				game: game,
 			});
 			update();
 		}
@@ -212,16 +221,16 @@ io.listen(server).on("connection", function(socket) {
 	});
 
 	socket.on("keyDown", function(dir) {
-		for(let player of red.concat(blue).filter(player => socket == player.socket)) {
-			physics.keyDown(player, dir);
-		}
+		let player = red.concat(blue).find(player => socket == player.socket);
+		if (!player) return;
+		physics.keyDown(player, dir);
 		update();
 	});
 
 	socket.on("keyUp", function(dir) {
-		for(let player of red.concat(blue).filter(player => socket == player.socket)) {
-			physics.keyUp(player, dir);
-		}
+		let player = red.concat(blue).find(player => socket == player.socket);
+		if (!player) return;
+		physics.keyUp(player, dir);
 		update();
 	});
 });

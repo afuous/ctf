@@ -8,7 +8,7 @@ function run(players, game) {
 	for(var i = 0; i < players.length; i++) {
 		var player = players[i];
 		if(player.frozen > 0) {
-			player.frozen -= 10;
+			player.frozen -= game.tickTime;
 			continue;
 		}
 		if(player.horiz == LEFT) {

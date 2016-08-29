@@ -32,11 +32,12 @@
 
 	document.oncontextmenu = function() {
 		return false;
-	}
+	};
 
 	window.onkeydown = function(event) {
 		if(!playing) return;
 		var key = (event || window.event).keyCode;
+		var now = Date.now();
 		if(key == 37 || key == 65) {
 			physics.keyDown(getSelf(), LEFT);
 			socket.emit("keyDown", LEFT);
@@ -57,6 +58,7 @@
 	window.onkeyup = function(event) {
 		if(!playing) return;
 		var key = (event || window.event).keyCode;
+		var now = Date.now();
 		if(key == 37 || key == 65) {
 			physics.keyUp(getSelf(), LEFT);
 			socket.emit("keyUp", LEFT);
@@ -104,12 +106,12 @@
 			dgid("stats").style.display = "block";
 			clearInterval(interval);
 			interval = setInterval(function() {
-				while(lastUpdate + 10 < Date.now()) {
+				while(lastUpdate + game.tickTime < Date.now()) {
 					physics.run(players, game);
-					lastUpdate += 10;
+					lastUpdate += game.tickTime;
 				}
 				draw();
-			}, 10);
+			}, game.tickTime);
 			lastUpdate = Date.now();
 		}
 		else {
@@ -138,7 +140,7 @@
 
 	function getSelf() {
 		for(var i = 0; i < players.length; i++) {
-			if(players[i].self) {
+			if(players[i].isSelf) {
 				return players[i];
 			}
 		}
@@ -166,9 +168,9 @@
 		table.appendChild(getRow(["", "Scores", "Tags", "Tagged", "Rating"]));
 		for(var i = 0; i < players.length; i++) {
 			var player = players[i];
-			ctx.fillStyle = player.self ? "black" : (player.team == RED ? "red" : "blue");
+			ctx.fillStyle = player.isSelf ? "black" : (player.team == RED ? "red" : "blue");
 			ctx.fillCircle(player.x, player.y, game.radius);
-			if(player.self) {
+			if(player.isSelf) {
 				ctx.fillStyle = player.team == RED ? "red" : "blue";
 				if(!player.hasFlag) {
 					ctx.fillCircle(player.x, player.y, game.radius / 2);
