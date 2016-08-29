@@ -34,10 +34,12 @@
 		return false;
 	};
 
+	var keys = {};
 	window.onkeydown = function(event) {
 		if(!playing) return;
 		var key = (event || window.event).keyCode;
-		var now = Date.now();
+		if (keys[key]) return;
+		keys[key] = true;
 		if(key == 37 || key == 65) {
 			physics.keyDown(getSelf(), LEFT);
 			socket.emit("keyDown", LEFT);
@@ -58,7 +60,7 @@
 	window.onkeyup = function(event) {
 		if(!playing) return;
 		var key = (event || window.event).keyCode;
-		var now = Date.now();
+		keys[key] = false;
 		if(key == 37 || key == 65) {
 			physics.keyUp(getSelf(), LEFT);
 			socket.emit("keyUp", LEFT);
