@@ -27,7 +27,7 @@ let server = http.createServer(function(req, res) {
 });
 server.listen(process.argv[2] || 80);
 
-const game = {
+const conf = {
 	width: 1200,
 	height: 600,
 	accel: 0.04,
@@ -38,7 +38,7 @@ const game = {
 		offset: 100,
 		radius: 70
 	},
-	freezeTime: 5000,
+	freezeTime: 5000, // ms
 	tickTime: 10, // ms
 }
 
@@ -86,12 +86,12 @@ function update() {
 }
 
 setInterval(function() {
-	while(lastUpdate + game.tickTime < Date.now()) {
-		physics.run(red.concat(blue), game);
+	while(lastUpdate + conf.tickTime < Date.now()) {
+		physics.run(red.concat(blue), conf);
 		checkCollisions();
-		lastUpdate += game.tickTime;
+		lastUpdate += conf.tickTime;
 	}
-}, game.tickTime);
+}, conf.tickTime);
 
 function dist(a, b) {
 	return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
@@ -103,11 +103,11 @@ function checkCollisions() {
 			for(let player2 of team) {
 				if(player1 != player2) {
 					if(player2.touching == player1) {
-						if(dist(player1, player2) > game.radius * 2) {
+						if(dist(player1, player2) > conf.radius * 2) {
 							player2.touching = null;
 						}
 					}
-					if(player1.hasFlag && player1.touching != player2 && dist(player1, player2) <= game.radius * 2) {
+					if(player1.hasFlag && player1.touching != player2 && dist(player1, player2) <= conf.radius * 2) {
 						player1.hasFlag = false;
 						player2.hasFlag = true;
 						player2.touching = player1;
@@ -120,13 +120,13 @@ function checkCollisions() {
 	transfer(red);
 	transfer(blue);
 	for(let redPlayer of red) {
-		if(dist({x: game.width - game.flag.offset - game.flag.radius, y: game.height / 2}, redPlayer) < game.flag.radius + game.radius) {
+		if(dist({x: conf.width - conf.flag.offset - conf.flag.radius, y: conf.height / 2}, redPlayer) < conf.flag.radius + conf.radius) {
 			if(!red.some(player => player.hasFlag)) {
 				redPlayer.hasFlag = true;
 				update();
 			}
 		}
-		if(redPlayer.hasFlag && redPlayer.x < game.width / 2) {
+		if(redPlayer.hasFlag && redPlayer.x < conf.width / 2) {
 			redPlayer.hasFlag = false;
 			redScore++;
 			redPlayer.scores++;
@@ -134,13 +134,13 @@ function checkCollisions() {
 		}
 	}
 	for(let bluePlayer of blue) {
-		if(dist({x: game.flag.offset + game.flag.radius, y: game.height / 2}, bluePlayer) < game.flag.radius + game.radius) {
+		if(dist({x: conf.flag.offset + conf.flag.radius, y: conf.height / 2}, bluePlayer) < conf.flag.radius + conf.radius) {
 			if(!blue.some(player => player.hasFlag)) {
 				bluePlayer.hasFlag = true;
 				update();
 			}
 		}
-		if(bluePlayer.hasFlag && bluePlayer.x > game.width / 2) {
+		if(bluePlayer.hasFlag && bluePlayer.x > conf.width / 2) {
 			bluePlayer.hasFlag = false;
 			blueScore++;
 			bluePlayer.scores++;
@@ -149,21 +149,21 @@ function checkCollisions() {
 	}
 	for(let redPlayer of red) {
 		for(let bluePlayer of blue) {
-			if(dist(redPlayer, bluePlayer) <= game.radius * 2) {
-				if(redPlayer.x + bluePlayer.x > game.width && bluePlayer.frozen == 0) {
-					redPlayer.x = game.flag.offset / 2;
-					redPlayer.y = game.height / 2;
+			if(dist(redPlayer, bluePlayer) <= conf.radius * 2) {
+				if(redPlayer.x + bluePlayer.x > conf.width && bluePlayer.frozen == 0) {
+					redPlayer.x = conf.flag.offset / 2;
+					redPlayer.y = conf.height / 2;
 					redPlayer.dx = redPlayer.dy = 0;
-					redPlayer.frozen = game.freezeTime;
+					redPlayer.frozen = conf.freezeTime;
 					redPlayer.hasFlag = false;
 					redPlayer.tagged++;
 					bluePlayer.tags++;
 				}
-				else if(redPlayer.x + bluePlayer.x < game.width && redPlayer.frozen == 0) {
-					bluePlayer.x = game.width - game.flag.offset / 2;
-					bluePlayer.y = game.height / 2;
+				else if(redPlayer.x + bluePlayer.x < conf.width && redPlayer.frozen == 0) {
+					bluePlayer.x = conf.width - conf.flag.offset / 2;
+					bluePlayer.y = conf.height / 2;
 					bluePlayer.dx = bluePlayer.dy = 0;
-					bluePlayer.frozen = game.freezeTime;
+					bluePlayer.frozen = conf.freezeTime;
 					bluePlayer.hasFlag = false;
 					bluePlayer.tagged++;
 					redPlayer.tags++;
@@ -187,8 +187,8 @@ io.listen(server).on("connection", function(socket) {
 		else {
 			(obj.team == RED ? red : blue).push({
 				socket: socket,
-				x: obj.team == RED ? game.flag.offset / 2 : game.width - game.flag.offset / 2,
-				y: game.height / 2,
+				x: obj.team == RED ? conf.flag.offset / 2 : conf.width - conf.flag.offset / 2,
+				y: conf.height / 2,
 				dx: 0,
 				dy: 0,
 				name: name,
@@ -204,7 +204,7 @@ io.listen(server).on("connection", function(socket) {
 			});
 			socket.emit("start", {
 				valid: true,
-				game: game,
+				conf: conf,
 			});
 			update();
 		}

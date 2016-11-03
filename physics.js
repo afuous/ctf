@@ -4,43 +4,43 @@ var UP = 2;
 var DOWN = 3;
 var CENTER = 4;
 
-function run(players, game) {
+function run(players, conf) {
 	for(var i = 0; i < players.length; i++) {
 		var player = players[i];
 		if(player.frozen > 0) {
-			player.frozen -= game.tickTime;
+			player.frozen -= conf.tickTime;
 			continue;
 		}
 		if(player.horiz == LEFT) {
-			player.dx -= player.dx < 0 ? game.accel : game.decel;
+			player.dx -= player.dx < 0 ? conf.accel : conf.decel;
 		}
 		else if(player.horiz == RIGHT) {
-			player.dx += player.dx > 0 ? game.accel : game.decel;
+			player.dx += player.dx > 0 ? conf.accel : conf.decel;
 		}
 		player.x += player.dx;
-		if(player.x < game.radius) {
-			player.x = game.radius;
-			player.dx *= -game.bounce;
+		if(player.x < conf.radius) {
+			player.x = conf.radius;
+			player.dx *= -conf.bounce;
 		}
-		if(player.x > game.width - game.radius) {
-			player.x = game.width - game.radius;
-			player.dx *= -game.bounce;
+		if(player.x > conf.width - conf.radius) {
+			player.x = conf.width - conf.radius;
+			player.dx *= -conf.bounce;
 		}
 
 		if(player.vert == UP) {
-			player.dy -= player.dy < 0 ? game.accel : game.decel;
+			player.dy -= player.dy < 0 ? conf.accel : conf.decel;
 		}
 		else if(player.vert == DOWN) {
-			player.dy += player.dy > 0 ? game.accel : game.decel;
+			player.dy += player.dy > 0 ? conf.accel : conf.decel;
 		}
 		player.y += player.dy;
-		if(player.y < game.radius) {
-			player.y = game.radius;
-			player.dy *= -game.bounce;
+		if(player.y < conf.radius) {
+			player.y = conf.radius;
+			player.dy *= -conf.bounce;
 		}
-		if(player.y > game.height - game.radius) {
-			player.y = game.height - game.radius;
-			player.dy *= -game.bounce;
+		if(player.y > conf.height - conf.radius) {
+			player.y = conf.height - conf.radius;
+			player.dy *= -conf.bounce;
 		}
 	}
 }

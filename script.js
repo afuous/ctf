@@ -99,21 +99,21 @@
 	socket.on("start", function(obj) {
 		if(obj.valid) {
 			playing = true;
-			game = obj.game;
-			canvas.width = game.width;
-			canvas.height = game.height;
-			dgid("table").width = game.width;
+			conf = obj.conf;
+			canvas.width = conf.width;
+			canvas.height = conf.height;
+			dgid("table").width = conf.width;
 			dgid("join").style.display = "none";
 			dgid("game").style.display = "block";
 			dgid("stats").style.display = "block";
 			clearInterval(interval);
 			interval = setInterval(function() {
-				while(lastUpdate + game.tickTime < Date.now()) {
-					physics.run(players, game);
-					lastUpdate += game.tickTime;
+				while(lastUpdate + conf.tickTime < Date.now()) {
+					physics.run(players, conf);
+					lastUpdate += conf.tickTime;
 				}
 				draw();
-			}, game.tickTime);
+			}, conf.tickTime);
 			lastUpdate = Date.now();
 		}
 		else {
@@ -138,7 +138,7 @@
 
 	var players = [];
 	var interval;
-	var game;
+	var conf;
 
 	function getSelf() {
 		for(var i = 0; i < players.length; i++) {
@@ -149,13 +149,13 @@
 	}
 
 	function draw() {
-		ctx.clearRect(0, 0, game.width, game.height);
+		ctx.clearRect(0, 0, conf.width, conf.height);
 		ctx.fillStyle = "black";
-		ctx.fillRect(game.width / 2 - 3, 0, 6, game.height);
+		ctx.fillRect(conf.width / 2 - 3, 0, 6, conf.height);
 		ctx.fillStyle = "red";
-		ctx.fillCircle(game.flag.offset + game.flag.radius, game.height / 2, game.flag.radius);
+		ctx.fillCircle(conf.flag.offset + conf.flag.radius, conf.height / 2, conf.flag.radius);
 		ctx.fillStyle = "blue";
-		ctx.fillCircle(game.width - game.flag.offset - game.flag.radius, game.height / 2, game.flag.radius);
+		ctx.fillCircle(conf.width - conf.flag.offset - conf.flag.radius, conf.height / 2, conf.flag.radius);
 		var redFlagTaken = false;
 		var blueFlagTaken = false;
 		for(var i = 0; i < players.length; i++) {
@@ -164,24 +164,24 @@
 			if(player.team == BLUE && player.hasFlag) redFlagTaken = true;
 		}
 		ctx.fillStyle = "black";
-		if(!redFlagTaken) ctx.fillCircle(game.flag.offset + game.flag.radius, game.height / 2, game.flag.radius / 2);
-		if(!blueFlagTaken) ctx.fillCircle(game.width - game.flag.offset - game.flag.radius, game.height / 2, game.flag.radius / 2);
+		if(!redFlagTaken) ctx.fillCircle(conf.flag.offset + conf.flag.radius, conf.height / 2, conf.flag.radius / 2);
+		if(!blueFlagTaken) ctx.fillCircle(conf.width - conf.flag.offset - conf.flag.radius, conf.height / 2, conf.flag.radius / 2);
 		var table = document.createElement("table");
 		table.appendChild(getRow(["", "Scores", "Tags", "Tagged", "Rating"]));
 		for(var i = 0; i < players.length; i++) {
 			var player = players[i];
 			ctx.fillStyle = player.isSelf ? "black" : (player.team == RED ? "red" : "blue");
-			ctx.fillCircle(player.x, player.y, game.radius);
+			ctx.fillCircle(player.x, player.y, conf.radius);
 			if(player.isSelf) {
 				ctx.fillStyle = player.team == RED ? "red" : "blue";
 				if(!player.hasFlag) {
-					ctx.fillCircle(player.x, player.y, game.radius / 2);
+					ctx.fillCircle(player.x, player.y, conf.radius / 2);
 				}
 			}
 			else {
 				ctx.fillStyle = "black";
 				if(player.hasFlag) {
-					ctx.fillCircle(player.x, player.y, game.radius / 2);
+					ctx.fillCircle(player.x, player.y, conf.radius / 2);
 				}
 				ctx.font = "14px Arial";
 				ctx.textAlign = "center";
@@ -199,8 +199,8 @@
 					x = 5;
 					ctx.textAlign = "left";
 				}
-				else if(x > game.width - ctx.measureText(player.name).width / 2) {
-					x = game.width - 5;
+				else if(x > conf.width - ctx.measureText(player.name).width / 2) {
+					x = conf.width - 5;
 					ctx.textAlign = "right";
 				}
 				ctx.fillText(player.name, x, y);
