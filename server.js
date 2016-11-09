@@ -51,18 +51,23 @@ const CENTER = 4;
 const RED = 0;
 const BLUE = 1;
 
-let red = [];
-let blue = [];
+// TODO: give all players an id
+let games = [];
+let gameUid = 0;
+games.push({
+	id: gameUid++,
+	red: [],
+	blue: [],
+	redScore: 0,
+	blueScore: 0,
+	lastUpdate: Date.now(),
+});
 
-let redScore = 0;
-let blueScore = 0;
-
-let lastUpdate = Date.now();
-
-function update() {
-	for(let player of red.concat(blue)) {
+function update(game) {
+	let players = getPlayers(game);
+	for(let player of players) {
 		player.socket.emit("update", {
-			players: red.concat(blue).map(p => ({
+			players: players.map(p => ({
 				x: p.x,
 				y: p.y,
 				dx: p.dx,
@@ -78,18 +83,23 @@ function update() {
 				tagged: p.tagged,
 				isSelf: p == player,
 			})),
-			redScore: redScore,
-			blueScore: blueScore,
-			lastUpdate: lastUpdate,
+			redScore: game.redScore,
+			blueScore: game.blueScore,
+			lastUpdate: game.lastUpdate,
 		});
 	}
 }
 
+function getPlayers(game) {
+	return game.red.concat(game.blue);
+}
+
 setInterval(function() {
-	while(lastUpdate + conf.tickTime < Date.now()) {
-		physics.run(red.concat(blue), conf);
-		checkCollisions();
-		lastUpdate += conf.tickTime;
+	let game = games[0];
+	while(game.lastUpdate + conf.tickTime < Date.now()) {
+		physics.run(getPlayers(game), conf);
+		checkCollisions(game);
+		game.lastUpdate += conf.tickTime;
 	}
 }, conf.tickTime);
 
@@ -97,7 +107,7 @@ function dist(a, b) {
 	return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
 }
 
-function checkCollisions() {
+function checkCollisions(game) {
 	let transfer = function(team) {
 		for(let player1 of team) {
 			for(let player2 of team) {
@@ -111,44 +121,44 @@ function checkCollisions() {
 						player1.hasFlag = false;
 						player2.hasFlag = true;
 						player2.touching = player1;
-						update();
+						update(game);
 					}
 				}
 			}
 		}
 	};
-	transfer(red);
-	transfer(blue);
-	for(let redPlayer of red) {
+	transfer(game.red);
+	transfer(game.blue);
+	for(let redPlayer of game.red) {
 		if(dist({x: conf.width - conf.flag.offset - conf.flag.radius, y: conf.height / 2}, redPlayer) < conf.flag.radius + conf.radius) {
-			if(!red.some(player => player.hasFlag)) {
+			if(!game.red.some(player => player.hasFlag)) {
 				redPlayer.hasFlag = true;
-				update();
+				update(game);
 			}
 		}
 		if(redPlayer.hasFlag && redPlayer.x < conf.width / 2) {
 			redPlayer.hasFlag = false;
-			redScore++;
+			game.redScore++;
 			redPlayer.scores++;
-			update();
+			update(game);
 		}
 	}
-	for(let bluePlayer of blue) {
+	for(let bluePlayer of game.blue) {
 		if(dist({x: conf.flag.offset + conf.flag.radius, y: conf.height / 2}, bluePlayer) < conf.flag.radius + conf.radius) {
-			if(!blue.some(player => player.hasFlag)) {
+			if(!game.blue.some(player => player.hasFlag)) {
 				bluePlayer.hasFlag = true;
-				update();
+				update(game);
 			}
 		}
 		if(bluePlayer.hasFlag && bluePlayer.x > conf.width / 2) {
 			bluePlayer.hasFlag = false;
-			blueScore++;
+			game.blueScore++;
 			bluePlayer.scores++;
-			update();
+			update(game);
 		}
 	}
-	for(let redPlayer of red) {
-		for(let bluePlayer of blue) {
+	for(let redPlayer of game.red) {
+		for(let bluePlayer of game.blue) {
 			if(dist(redPlayer, bluePlayer) <= conf.radius * 2) {
 				if(redPlayer.x + bluePlayer.x > conf.width && bluePlayer.frozen == 0) {
 					redPlayer.x = conf.flag.offset / 2;
@@ -168,7 +178,7 @@ function checkCollisions() {
 					bluePlayer.tagged++;
 					redPlayer.tags++;
 				}
-				update();
+				update(game);
 			}
 		}
 	}
@@ -176,16 +186,18 @@ function checkCollisions() {
 
 io.listen(server).on("connection", function(socket) {
 	socket.on("join", function(obj) {
+		let game = games[0];
 		let name = obj.name.trim();
-		if(name.length == 0 || red.concat(blue).some(player => socket == player.socket)) return;
+		let players = getPlayers(game);
+		if(name.length == 0 || players.some(player => socket == player.socket)) return;
 		name = name.substring(0, 25);
-		if(red.concat(blue).some(player => name.toLowerCase() == player.name.toLowerCase())) {
+		if(players.some(player => name.toLowerCase() == player.name.toLowerCase())) {
 			socket.emit("start", {
 				valid: false,
 			});
 		}
 		else {
-			(obj.team == RED ? red : blue).push({
+			(obj.team == RED ? game.red : game.blue).push({
 				socket: socket,
 				x: obj.team == RED ? conf.flag.offset / 2 : conf.width - conf.flag.offset / 2,
 				y: conf.height / 2,
@@ -206,31 +218,35 @@ io.listen(server).on("connection", function(socket) {
 				valid: true,
 				conf: conf,
 			});
-			update();
+			update(game);
 		}
 	});
 
 	socket.on("disconnect", function() {
-		red = red.filter(player => socket != player.socket);
-		blue = blue.filter(player => socket != player.socket);
-		if(red.length == 0 && blue.length == 0) {
-			redScore = 0;
-			blueScore = 0;
+		let game = games[0];
+		game.red = game.red.filter(player => socket != player.socket);
+		game.blue = game.blue.filter(player => socket != player.socket);
+		if(game.red.length == 0 && game.blue.length == 0) {
+			// TODO: delete the game here when multiple rooms are added
+			game.redScore = 0;
+			game.blueScore = 0;
 		}
-		update();
+		update(game);
 	});
 
 	socket.on("keyDown", function(dir) {
-		let player = red.concat(blue).find(player => socket == player.socket);
+		let game = games[0];
+		let player = getPlayers(game).find(player => socket == player.socket);
 		if (!player) return;
 		physics.keyDown(player, dir);
-		update();
+		update(game);
 	});
 
 	socket.on("keyUp", function(dir) {
-		let player = red.concat(blue).find(player => socket == player.socket);
+		let game = games[0];
+		let player = getPlayers(game).find(player => socket == player.socket);
 		if (!player) return;
 		physics.keyUp(player, dir);
-		update();
+		update(game);
 	});
 });
