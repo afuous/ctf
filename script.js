@@ -29,6 +29,7 @@
 	var blueScore = 0;
 
 	var lastUpdate;
+	var gameId;
 
 	document.oncontextmenu = function() {
 		return false;
@@ -81,6 +82,7 @@
 
 	dgid("red").onclick = function() {
 		socket.emit("join", {
+			gameId: dgid("gameId").value,
 			name: dgid("name").value,
 			team: RED
 		});
@@ -88,10 +90,16 @@
 	};
 	dgid("blue").onclick = function() {
 		socket.emit("join", {
+			gameId: dgid("gameId").value,
 			name: dgid("name").value,
 			team: BLUE
 		});
 		return false;
+	};
+	dgid("create").onclick = function() {
+		socket.emit("create", {
+			name: dgid("name").value,
+		});
 	};
 
 	dgid("name").focus();
@@ -99,6 +107,8 @@
 	socket.on("start", function(obj) {
 		if(obj.valid) {
 			playing = true;
+			gameId = obj.gameId;
+			dgid("gameIdDisplay").innerHTML = "Game ID: " + gameId;
 			conf = obj.conf;
 			canvas.width = conf.width;
 			canvas.height = conf.height;

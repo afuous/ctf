@@ -125,7 +125,5 @@ if(typeof(exports) == "undefined") {
 	window.physics = physics;
 }
 else {
-	for(var key in physics) {
-		exports[key] = physics[key];
-	}
+	module.exports = physics;
 }

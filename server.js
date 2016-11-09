@@ -53,15 +53,7 @@ const BLUE = 1;
 
 // TODO: give all players an id
 let games = [];
-let gameUid = 0;
-games.push({
-	id: gameUid++,
-	red: [],
-	blue: [],
-	redScore: 0,
-	blueScore: 0,
-	lastUpdate: Date.now(),
-});
+let gameUid = 1;
 
 function update(game) {
 	let players = getPlayers(game);
@@ -90,16 +82,21 @@ function update(game) {
 	}
 }
 
+function getGame(gameId) {
+	return games.find(game => game.id == gameId);
+}
+
 function getPlayers(game) {
 	return game.red.concat(game.blue);
 }
 
 setInterval(function() {
-	let game = games[0];
-	while(game.lastUpdate + conf.tickTime < Date.now()) {
-		physics.run(getPlayers(game), conf);
-		checkCollisions(game);
-		game.lastUpdate += conf.tickTime;
+	for (let game of games) {
+		while(game.lastUpdate + conf.tickTime < Date.now()) {
+			physics.run(getPlayers(game), conf);
+			checkCollisions(game);
+			game.lastUpdate += conf.tickTime;
+		}
 	}
 }, conf.tickTime);
 
@@ -185,28 +182,47 @@ function checkCollisions(game) {
 }
 
 io.listen(server).on("connection", function(socket) {
+
+	let game;
+
+	socket.on("create", function(obj) {
+		game = {
+			id: gameUid++,
+			red: [],
+			blue: [],
+			redScore: 0,
+			blueScore: 0,
+			lastUpdate: Date.now(),
+		};
+		games.push(game);
+		join(obj.name, RED);
+	});
+
 	socket.on("join", function(obj) {
-		let game = games[0];
-		let name = obj.name.trim();
+		game = getGame(obj.gameId);
+		join(obj.name, obj.team);
+	});
+
+	function join(name, team) {
+		name = name.trim().substring(0, 25);
 		let players = getPlayers(game);
 		if(name.length == 0 || players.some(player => socket == player.socket)) return;
-		name = name.substring(0, 25);
 		if(players.some(player => name.toLowerCase() == player.name.toLowerCase())) {
 			socket.emit("start", {
 				valid: false,
 			});
 		}
 		else {
-			(obj.team == RED ? game.red : game.blue).push({
+			(team == RED ? game.red : game.blue).push({
 				socket: socket,
-				x: obj.team == RED ? conf.flag.offset / 2 : conf.width - conf.flag.offset / 2,
+				x: team == RED ? conf.flag.offset / 2 : conf.width - conf.flag.offset / 2,
 				y: conf.height / 2,
 				dx: 0,
 				dy: 0,
 				name: name,
 				horiz: CENTER,
 				vert: CENTER,
-				team: obj.team == RED ? RED : BLUE,
+				team: team == RED ? RED : BLUE,
 				frozen: 0,
 				hasFlag: false,
 				touching: null,
@@ -217,25 +233,25 @@ io.listen(server).on("connection", function(socket) {
 			socket.emit("start", {
 				valid: true,
 				conf: conf,
+				gameId: game.id,
 			});
 			update(game);
 		}
-	});
+	}
 
 	socket.on("disconnect", function() {
-		let game = games[0];
+		if (!game) return;
 		game.red = game.red.filter(player => socket != player.socket);
 		game.blue = game.blue.filter(player => socket != player.socket);
 		if(game.red.length == 0 && game.blue.length == 0) {
-			// TODO: delete the game here when multiple rooms are added
-			game.redScore = 0;
-			game.blueScore = 0;
+			games.splice(games.indexOf(game), 1);
+		} else {
+			update(game);
 		}
-		update(game);
+		game = undefined;
 	});
 
 	socket.on("keyDown", function(dir) {
-		let game = games[0];
 		let player = getPlayers(game).find(player => socket == player.socket);
 		if (!player) return;
 		physics.keyDown(player, dir);
@@ -243,7 +259,6 @@ io.listen(server).on("connection", function(socket) {
 	});
 
 	socket.on("keyUp", function(dir) {
-		let game = games[0];
 		let player = getPlayers(game).find(player => socket == player.socket);
 		if (!player) return;
 		physics.keyUp(player, dir);
