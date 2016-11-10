@@ -7,7 +7,6 @@ let url = require("url");
 let physics = require("./physics");
 
 let staticPages = {
-	"": "index.html",
 	"script.js": "script.js",
 	"physics.js": "physics.js",
 	"socketio.js": "socketio.js",
@@ -15,15 +14,8 @@ let staticPages = {
 
 let server = http.createServer(function(req, res) {
 	let path = url.parse(req.url).pathname.substring(1);
-
-	if (staticPages[path]) {
-		fs.createReadStream(require("path").join(__dirname, staticPages[path])).pipe(res);
-	} else {
-		res.writeHead(400, {
-			"Content-type": "text/plain",
-		});
-		res.end("Not found");
-	}
+	let file = staticPages[path] || "index.html";
+	fs.createReadStream(require("path").join(__dirname, file)).pipe(res);
 });
 server.listen(process.argv[2] || 80);
 

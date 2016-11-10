@@ -104,11 +104,14 @@
 
 	dgid("name").focus();
 
+	dgid("gameId").value = window.location.pathname.substring(1);
+
 	socket.on("start", function(obj) {
 		if(obj.valid) {
 			playing = true;
 			gameId = obj.gameId;
 			dgid("gameIdDisplay").innerHTML = "Game ID: " + gameId;
+			window.history.pushState({}, null, "/" + gameId);
 			conf = obj.conf;
 			canvas.width = conf.width;
 			canvas.height = conf.height;
