@@ -1,2 +1,4 @@
 node.exe
 node_modules
+**/*.swp
+**/.DS_Store

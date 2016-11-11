@@ -80,19 +80,10 @@
 		}
 	};
 
-	dgid("red").onclick = function() {
+	dgid("join").onclick = function() {
 		socket.emit("join", {
 			gameId: dgid("gameId").value,
 			name: dgid("name").value,
-			team: RED
-		});
-		return false;
-	};
-	dgid("blue").onclick = function() {
-		socket.emit("join", {
-			gameId: dgid("gameId").value,
-			name: dgid("name").value,
-			team: BLUE
 		});
 		return false;
 	};
@@ -106,32 +97,35 @@
 
 	dgid("gameId").value = window.location.pathname.substring(1);
 
+	socket.on("invalidName", function(obj) {
+		alert(obj.message);
+	});
+
+	socket.on("invalidGameId", function(obj) {
+		alert(obj.message);
+	});
+
 	socket.on("start", function(obj) {
-		if(obj.valid) {
-			playing = true;
-			gameId = obj.gameId;
-			dgid("gameIdDisplay").innerHTML = "Game ID: " + gameId;
-			window.history.pushState({}, null, "/" + gameId);
-			conf = obj.conf;
-			canvas.width = conf.width;
-			canvas.height = conf.height;
-			dgid("table").width = conf.width;
-			dgid("join").style.display = "none";
-			dgid("game").style.display = "block";
-			dgid("stats").style.display = "block";
-			clearInterval(interval);
-			interval = setInterval(function() {
-				while(lastUpdate + conf.tickTime < Date.now()) {
-					physics.run(players, conf);
-					lastUpdate += conf.tickTime;
-				}
-				draw();
-			}, conf.tickTime);
-			lastUpdate = Date.now();
-		}
-		else {
-			alert("Duplicate name");
-		}
+		playing = true;
+		gameId = obj.gameId;
+		dgid("gameIdDisplay").innerHTML = "Game ID: " + gameId;
+		window.history.pushState({}, null, "/" + gameId);
+		conf = obj.conf;
+		canvas.width = conf.width;
+		canvas.height = conf.height;
+		dgid("table").width = conf.width;
+		dgid("join").style.display = "none";
+		dgid("game").style.display = "block";
+		dgid("stats").style.display = "block";
+		clearInterval(interval);
+		interval = setInterval(function() {
+			while(lastUpdate + conf.tickTime < Date.now()) {
+				physics.run(players, conf);
+				lastUpdate += conf.tickTime;
+			}
+			draw();
+		}, conf.tickTime);
+		lastUpdate = Date.now();
 	});
 
 	socket.on("disconnect", function() {

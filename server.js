@@ -187,34 +187,41 @@ io.listen(server).on("connection", function(socket) {
 			lastUpdate: Date.now(),
 		};
 		games.push(game);
-		join(obj.name, RED);
+		join(obj.name);
 	});
 
 	socket.on("join", function(obj) {
 		game = getGame(obj.gameId);
-		join(obj.name, obj.team);
+		if (!game) {
+			socket.emit("invalidGameId", {
+				message: "A game with that ID was not found",
+			});
+		} else {
+			join(obj.name);
+		}
 	});
 
-	function join(name, team) {
+	function join(name) {
 		name = name.trim().substring(0, 25);
 		let players = getPlayers(game);
 		if(name.length == 0 || players.some(player => socket == player.socket)) return;
 		if(players.some(player => name.toLowerCase() == player.name.toLowerCase())) {
-			socket.emit("start", {
-				valid: false,
+			socket.emit("invalidName", {
+				message: "Duplicate name",
 			});
 		}
 		else {
-			(team == RED ? game.red : game.blue).push({
+			let isRed = game.red.length <= game.blue.length;
+			(isRed ? game.red : game.blue).push({
 				socket: socket,
-				x: team == RED ? conf.flag.offset / 2 : conf.width - conf.flag.offset / 2,
+				x: isRed ? conf.flag.offset / 2 : conf.width - conf.flag.offset / 2,
 				y: conf.height / 2,
 				dx: 0,
 				dy: 0,
 				name: name,
 				horiz: CENTER,
 				vert: CENTER,
-				team: team == RED ? RED : BLUE,
+				team: isRed ? RED : BLUE,
 				frozen: 0,
 				hasFlag: false,
 				touching: null,
@@ -223,7 +230,6 @@ io.listen(server).on("connection", function(socket) {
 				tagged: 0,
 			});
 			socket.emit("start", {
-				valid: true,
 				conf: conf,
 				gameId: game.id,
 			});
@@ -244,6 +250,7 @@ io.listen(server).on("connection", function(socket) {
 	});
 
 	socket.on("keyDown", function(dir) {
+		if (!game) return;
 		let player = getPlayers(game).find(player => socket == player.socket);
 		if (!player) return;
 		physics.keyDown(player, dir);
@@ -251,6 +258,7 @@ io.listen(server).on("connection", function(socket) {
 	});
 
 	socket.on("keyUp", function(dir) {
+		if (!game) return;
 		let player = getPlayers(game).find(player => socket == player.socket);
 		if (!player) return;
 		physics.keyUp(player, dir);
