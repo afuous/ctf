@@ -80,17 +80,23 @@
 		}
 	};
 
-	dgid("join").onclick = function() {
-		socket.emit("join", {
+	dgid("joinPrivate").onclick = function() {
+		socket.emit("joinPrivate", {
 			gameId: dgid("gameId").value,
 			name: dgid("name").value,
 		});
 		return false;
 	};
-	dgid("create").onclick = function() {
-		socket.emit("create", {
+	dgid("createPrivate").onclick = function() {
+		socket.emit("createPrivate", {
 			name: dgid("name").value,
 		});
+	};
+	dgid("joinPublic").onclick = function() {
+		socket.emit("joinPublic", {
+			name: dgid("name").value,
+		});
+		window.history.pushState({}, null, "/");
 	};
 
 	dgid("name").focus();
@@ -108,8 +114,10 @@
 	socket.on("start", function(obj) {
 		playing = true;
 		gameId = obj.gameId;
-		dgid("gameIdDisplay").innerHTML = "Game ID: " + gameId;
-		window.history.pushState({}, null, "/" + gameId);
+		if (gameId) {
+			dgid("gameIdDisplay").innerHTML = "Game ID: " + gameId;
+			window.history.pushState({}, null, "/" + gameId);
+		}
 		conf = obj.conf;
 		canvas.width = conf.width;
 		canvas.height = conf.height;

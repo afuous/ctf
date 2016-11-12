@@ -43,9 +43,47 @@ const CENTER = 4;
 const RED = 0;
 const BLUE = 1;
 
-// TODO: give all players an id
-let games = [];
-let gameUid = 1;
+// TODO: maybe give all players an id
+let privateGames = {};
+let nextPublicGame = null;
+let publicGames = {};
+let publicGameUid = 0;
+
+function createGame() {
+	return {
+		red: [],
+		blue: [],
+		redScore: 0,
+		blueScore: 0,
+		lastUpdate: Date.now(),
+	};
+}
+
+function createPlayer(socket, name, team) {
+	return {
+		socket: socket,
+		x: team == RED ? conf.flag.offset / 2 : conf.width - conf.flag.offset / 2,
+		y: conf.height / 2,
+		dx: 0,
+		dy: 0,
+		name: name,
+		horiz: CENTER,
+		vert: CENTER,
+		team: team,
+		frozen: 0,
+		hasFlag: false,
+		touching: null,
+		scores: 0,
+		tags: 0,
+		tagged: 0,
+	};
+}
+
+function getToken() {
+	return Array(8).fill()
+		.map(() => String.fromCharCode(Math.floor(Math.random() * 26) + 97))
+		.join("");
+}
 
 function update(game) {
 	let players = getPlayers(game);
@@ -74,15 +112,13 @@ function update(game) {
 	}
 }
 
-function getGame(gameId) {
-	return games.find(game => game.id == gameId);
-}
-
 function getPlayers(game) {
 	return game.red.concat(game.blue);
 }
 
 setInterval(function() {
+	let games = Object.keys(privateGames).map(key => privateGames[key])
+		.concat(Object.keys(publicGames).map(key => publicGames[key]));
 	for (let game of games) {
 		while(game.lastUpdate + conf.tickTime < Date.now()) {
 			physics.run(getPlayers(game), conf);
@@ -176,32 +212,58 @@ function checkCollisions(game) {
 io.listen(server).on("connection", function(socket) {
 
 	let game;
+	let player;
 
-	socket.on("create", function(obj) {
-		game = {
-			id: gameUid++,
-			red: [],
-			blue: [],
-			redScore: 0,
-			blueScore: 0,
-			lastUpdate: Date.now(),
-		};
-		games.push(game);
-		join(obj.name);
+	socket.on("createPrivate", function(obj) {
+		let gameId;
+		do {
+			gameId = getToken();
+		} while (gameId in privateGames);
+		game = createGame();
+		game.isPublic = false;
+		game.id = gameId;
+		privateGames[gameId] = game;
+		joinPrivate(obj.name);
+		// TODO: if invalid name, game will still be created
 	});
 
-	socket.on("join", function(obj) {
-		game = getGame(obj.gameId);
+	socket.on("joinPrivate", function(obj) {
+		game = privateGames[obj.gameId];
 		if (!game) {
 			socket.emit("invalidGameId", {
 				message: "A game with that ID was not found",
 			});
 		} else {
-			join(obj.name);
+			joinPrivate(obj.name);
 		}
 	});
 
-	function join(name) {
+	socket.on("joinPublic", function(obj) {
+		if (!nextPublicGame) {
+			nextPublicGame = createGame();
+			nextPublicGame.isPublic = true;
+		}
+		game = nextPublicGame;
+		let name = checkName(obj.name);
+		if (!name) return;
+		let team = game.red.length <= game.blue.length ? RED : BLUE;
+		player = createPlayer(socket, name, team);
+		(team == RED ? game.red : game.blue).push(player);
+		socket.emit("start", {
+			conf: conf,
+		});
+		update(game);
+		let playersPerTeam = 2;
+		if (nextPublicGame.red.length == playersPerTeam && nextPublicGame.blue.length == playersPerTeam) {
+			nextPublicGame.id = publicGameUid++;
+			publicGames[nextPublicGame.id] = nextPublicGame;
+			nextPublicGame = null;
+			// actually start
+			// anything for else?
+		}
+	});
+
+	function checkName(name) {
 		name = name.trim().substring(0, 25);
 		let players = getPlayers(game);
 		if(name.length == 0 || players.some(player => socket == player.socket)) return;
@@ -209,58 +271,46 @@ io.listen(server).on("connection", function(socket) {
 			socket.emit("invalidName", {
 				message: "Duplicate name",
 			});
+			game = null;
+			return;
 		}
-		else {
-			let isRed = game.red.length <= game.blue.length;
-			(isRed ? game.red : game.blue).push({
-				socket: socket,
-				x: isRed ? conf.flag.offset / 2 : conf.width - conf.flag.offset / 2,
-				y: conf.height / 2,
-				dx: 0,
-				dy: 0,
-				name: name,
-				horiz: CENTER,
-				vert: CENTER,
-				team: isRed ? RED : BLUE,
-				frozen: 0,
-				hasFlag: false,
-				touching: null,
-				scores: 0,
-				tags: 0,
-				tagged: 0,
-			});
-			socket.emit("start", {
-				conf: conf,
-				gameId: game.id,
-			});
-			update(game);
-		}
+		return name;
+	}
+
+	function joinPrivate(name) {
+		name = checkName(name);
+		if (!name) return;
+		let team = game.red.length <= game.blue.length ? RED : BLUE;
+		player = createPlayer(socket, name, team);
+		(team == RED ? game.red : game.blue).push(player);
+		socket.emit("start", {
+			conf: conf,
+			gameId: game.id,
+		});
+		update(game);
 	}
 
 	socket.on("disconnect", function() {
 		if (!game) return;
-		game.red = game.red.filter(player => socket != player.socket);
-		game.blue = game.blue.filter(player => socket != player.socket);
-		if(game.red.length == 0 && game.blue.length == 0) {
-			games.splice(games.indexOf(game), 1);
+		game.red = game.red.filter(p => p != player);
+		game.blue = game.blue.filter(p => p != player);
+		if (game.red.length == 0 && game.blue.length == 0) {
+			delete privateGames[game.id];
 		} else {
 			update(game);
 		}
-		game = undefined;
+		game = null;
+		player = null;
 	});
 
 	socket.on("keyDown", function(dir) {
-		if (!game) return;
-		let player = getPlayers(game).find(player => socket == player.socket);
-		if (!player) return;
+		if (!game || !player) return;
 		physics.keyDown(player, dir);
 		update(game);
 	});
 
 	socket.on("keyUp", function(dir) {
-		if (!game) return;
-		let player = getPlayers(game).find(player => socket == player.socket);
-		if (!player) return;
+		if (!game || !player) return;
 		physics.keyUp(player, dir);
 		update(game);
 	});
