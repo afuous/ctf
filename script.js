@@ -1,11 +1,12 @@
 (function() {
-	var dgid = function(id) {
+
+	var getElem = function(id) {
 		return document.getElementById(id);
 	};
 
 	var socket = io.connect();
 
-	var canvas = dgid("canvas");
+	var canvas = getElem("canvas");
 	var ctx = canvas.getContext("2d");
 
 	ctx.fillCircle = function(x, y, radius) {
@@ -31,77 +32,81 @@
 	var lastUpdate;
 	var gameId;
 
+	var fps = 60;
+
 	document.oncontextmenu = function() {
 		return false;
 	};
 
 	var keys = {};
 	window.onkeydown = function(event) {
-		if(!playing) return;
+		if (!playing) return;
 		var key = (event || window.event).keyCode;
 		if (keys[key]) return;
 		keys[key] = true;
-		if(key == 37 || key == 65) {
+		if (key == 37 || key == 65) {
 			physics.keyDown(getSelf(), LEFT);
 			socket.emit("keyDown", LEFT);
-		}
-		else if(key == 39 || key == 68) {
+		} else if (key == 39 || key == 68) {
 			physics.keyDown(getSelf(), RIGHT);
 			socket.emit("keyDown", RIGHT);
-		}
-		else if(key == 38 || key == 87) {
+		} else if (key == 38 || key == 87) {
 			physics.keyDown(getSelf(), UP);
 			socket.emit("keyDown", UP);
-		}
-		else if(key == 40 || key == 83) {
+		} else if (key == 40 || key == 83) {
 			physics.keyDown(getSelf(), DOWN);
 			socket.emit("keyDown", DOWN);
 		}
 	};
 	window.onkeyup = function(event) {
-		if(!playing) return;
+		if (!playing) return;
 		var key = (event || window.event).keyCode;
 		keys[key] = false;
-		if(key == 37 || key == 65) {
+		if (key == 37 || key == 65) {
 			physics.keyUp(getSelf(), LEFT);
 			socket.emit("keyUp", LEFT);
-		}
-		else if(key == 39 || key == 68) {
+		} else if (key == 39 || key == 68) {
 			physics.keyUp(getSelf(), RIGHT);
 			socket.emit("keyUp", RIGHT);
-		}
-		else if(key == 38 || key == 87) {
+		} else if (key == 38 || key == 87) {
 			physics.keyUp(getSelf(), UP);
 			socket.emit("keyUp", UP);
-		}
-		else if(key == 40 || key == 83) {
+		} else if (key == 40 || key == 83) {
 			physics.keyUp(getSelf(), DOWN);
 			socket.emit("keyUp", DOWN);
 		}
 	};
 
-	dgid("joinPrivate").onclick = function() {
+	getElem("introJoinPrivate").onclick = function() {
+		show("joinPrivateScreen", "nameDisplay");
+	};
+
+	getElem("introCreatePrivate").onclick = function() {
+		show("createPrivateScreen", "nameDisplay");
+	};
+
+	getElem("joinPrivate").onclick = function() {
 		socket.emit("joinPrivate", {
-			gameId: dgid("gameId").value,
-			name: dgid("name").value,
+			gameId: getElem("gameId").value,
+			name: getElem("name").value,
 		});
 		return false;
 	};
-	dgid("createPrivate").onclick = function() {
+	getElem("createPrivate").onclick = function() {
 		socket.emit("createPrivate", {
-			name: dgid("name").value,
+			name: getElem("name").value,
 		});
 	};
-	dgid("joinPublic").onclick = function() {
+	getElem("joinPublic").onclick = function() {
 		socket.emit("joinPublic", {
-			name: dgid("name").value,
+			name: getElem("name").value,
 		});
 		window.history.pushState({}, null, "/");
 	};
 
-	dgid("name").focus();
+	getElem("name").focus();
 
-	dgid("gameId").value = window.location.pathname.substring(1);
+	getElem("gameId").value = window.location.pathname.substring(1);
 
 	socket.on("invalidName", function(obj) {
 		alert(obj.message);
@@ -111,35 +116,48 @@
 		alert(obj.message);
 	});
 
+	function show() {
+		var allScreens = [
+			"introScreen",
+			"joinPrivateScreen",
+			"createPrivateScreen",
+			"gameScreen",
+			"stats",
+			"nameDisplay",
+		];
+		for (var i = 0; i < allScreens.length; i++) {
+			getElem(allScreens[i]).style.display = "none";
+		}
+		for (var i = 0; i < arguments.length; i++) {
+			getElem(arguments[i]).style.display = "block";
+		}
+	}
+
 	socket.on("start", function(obj) {
 		playing = true;
 		gameId = obj.gameId;
 		if (gameId) {
-			dgid("gameIdDisplay").innerHTML = "Game ID: " + gameId;
+			getElem("gameIdDisplay").innerHTML = "Game ID: " + gameId;
 			window.history.pushState({}, null, "/" + gameId);
 		}
 		conf = obj.conf;
 		canvas.width = conf.width;
 		canvas.height = conf.height;
-		dgid("table").width = conf.width;
-		dgid("join").style.display = "none";
-		dgid("game").style.display = "block";
-		dgid("stats").style.display = "block";
+		getElem("table").width = conf.width;
+		show("gameScreen", "stats");
 		clearInterval(interval);
 		interval = setInterval(function() {
-			while(lastUpdate + conf.tickTime < Date.now()) {
+			while (lastUpdate + conf.tickTime < Date.now()) {
 				physics.run(players, conf);
 				lastUpdate += conf.tickTime;
 			}
-			draw();
-		}, conf.tickTime);
+			requestAnimationFrame(draw);
+		}, 1000 / fps);
 		lastUpdate = Date.now();
 	});
 
 	socket.on("disconnect", function() {
-		dgid("join").style.display = "block";
-		dgid("game").style.display = "none";
-		dgid("stats").style.display = "none";
+		show("intoScreen", "name");
 		clearInterval(interval);
 		playing = false;
 	});
@@ -156,8 +174,8 @@
 	var conf;
 
 	function getSelf() {
-		for(var i = 0; i < players.length; i++) {
-			if(players[i].isSelf) {
+		for (var i = 0; i < players.length; i++) {
+			if (players[i].isSelf) {
 				return players[i];
 			}
 		}
@@ -173,29 +191,32 @@
 		ctx.fillCircle(conf.width - conf.flag.offset - conf.flag.radius, conf.height / 2, conf.flag.radius);
 		var redFlagTaken = false;
 		var blueFlagTaken = false;
-		for(var i = 0; i < players.length; i++) {
+		for (var i = 0; i < players.length; i++) {
 			var player = players[i];
 			if(player.team == RED && player.hasFlag) blueFlagTaken = true;
 			if(player.team == BLUE && player.hasFlag) redFlagTaken = true;
 		}
 		ctx.fillStyle = "black";
-		if(!redFlagTaken) ctx.fillCircle(conf.flag.offset + conf.flag.radius, conf.height / 2, conf.flag.radius / 2);
-		if(!blueFlagTaken) ctx.fillCircle(conf.width - conf.flag.offset - conf.flag.radius, conf.height / 2, conf.flag.radius / 2);
+		if (!redFlagTaken) {
+			ctx.fillCircle(conf.flag.offset + conf.flag.radius, conf.height / 2, conf.flag.radius / 2);
+		}
+		if (!blueFlagTaken) {
+			ctx.fillCircle(conf.width - conf.flag.offset - conf.flag.radius, conf.height / 2, conf.flag.radius / 2);
+		}
 		var table = document.createElement("table");
 		table.appendChild(getRow(["", "Scores", "Tags", "Tagged", "Rating"]));
-		for(var i = 0; i < players.length; i++) {
+		for (var i = 0; i < players.length; i++) {
 			var player = players[i];
 			ctx.fillStyle = player.isSelf ? "black" : (player.team == RED ? "red" : "blue");
 			ctx.fillCircle(player.x, player.y, conf.radius);
-			if(player.isSelf) {
+			if (player.isSelf) {
 				ctx.fillStyle = player.team == RED ? "red" : "blue";
-				if(!player.hasFlag) {
+				if (!player.hasFlag) {
 					ctx.fillCircle(player.x, player.y, conf.radius / 2);
 				}
-			}
-			else {
+			} else {
 				ctx.fillStyle = "black";
-				if(player.hasFlag) {
+				if (player.hasFlag) {
 					ctx.fillCircle(player.x, player.y, conf.radius / 2);
 				}
 				ctx.font = "14px Arial";
@@ -204,17 +225,15 @@
 				var y = player.y;
 				var offset = 18;
 				x = player.x;
-				if(y > 50) {
+				if (y > 50) {
 					y -= offset;
-				}
-				else {
+				} else {
 					y += offset + 10;
 				}
-				if(x < ctx.measureText(player.name).width / 2) {
+				if (x < ctx.measureText(player.name).width / 2) {
 					x = 5;
 					ctx.textAlign = "left";
-				}
-				else if(x > conf.width - ctx.measureText(player.name).width / 2) {
+				} else if (x > conf.width - ctx.measureText(player.name).width / 2) {
 					x = conf.width - 5;
 					ctx.textAlign = "right";
 				}
@@ -223,17 +242,17 @@
 			rating = 2 * player.scores + player.tags - 2 * player.tagged;
 			table.appendChild(getRow([player.name, player.scores, player.tags, player.tagged, rating], player.team == RED ? "#ffdddd" : "#ddddff"));
 		}
-		dgid("stats").innerHTML = "";
-		dgid("stats").appendChild(table);
-		dgid("redScore").innerHTML = redScore;
-		dgid("blueScore").innerHTML = blueScore;
+		getElem("stats").innerHTML = "";
+		getElem("stats").appendChild(table);
+		getElem("redScore").innerHTML = redScore;
+		getElem("blueScore").innerHTML = blueScore;
 	}
 
 	function getRow(cells, background) {
-		if(!background) background = "white";
+		if (!background) background = "white";
 		var tr = document.createElement("tr");
 		tr.style.backgroundColor = background;
-		for(var i = 0; i < cells.length; i++) {
+		for (var i = 0; i < cells.length; i++) {
 			var td = document.createElement("td");
 			td.width = "100";
 			td.style.fontSize = "16px";
@@ -242,4 +261,5 @@
 		}
 		return tr;
 	}
+
 })();

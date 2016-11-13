@@ -1,0 +1,51 @@
+.info {
+	font-size: 20px;
+	text-align: center
+}
+
+body {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.stats {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: none;
+}
+
+.score {
+	font-size: 40px;
+	text-align: center;
+}
+
+.red {
+	color: red;
+}
+
+.blue {
+	color: blue;
+}
+
+.gameId {
+	margin-top: 50px;
+	text-align: center;
+	font-size: 30px;
+}
+
+.shown {
+	display: block;
+}
+
+.hidden {
+	display: none;
+}
+
+.gameCanvas {
+	border: 6px solid black;
+}
