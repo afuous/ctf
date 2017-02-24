@@ -137,7 +137,7 @@
 		playing = true;
 		gameId = obj.gameId;
 		if (gameId) {
-			getElem("gameIdDisplay").innerHTML = "Game ID: " + gameId;
+			getElem("gameIdDisplay").innerHTML = "Game ID: <span class='selectable'>" + gameId + "</span>";
 			window.history.pushState({}, null, "/" + gameId);
 		}
 		conf = obj.conf;
