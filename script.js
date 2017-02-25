@@ -85,26 +85,35 @@
 		show("createPrivateScreen", "nameDisplay");
 	};
 
+	function getName() {
+		var name = getElem("name").value;
+		localStorage.name = name;
+		return name;
+	}
+
 	getElem("joinPrivate").onclick = function() {
 		socket.emit("joinPrivate", {
 			gameId: getElem("gameId").value,
-			name: getElem("name").value,
+			name: getName(),
 		});
 		return false;
 	};
 	getElem("createPrivate").onclick = function() {
 		socket.emit("createPrivate", {
-			name: getElem("name").value,
+			name: getName(),
 		});
 	};
 	getElem("joinPublic").onclick = function() {
 		socket.emit("joinPublic", {
-			name: getElem("name").value,
+			name: getName(),
 		});
 		window.history.pushState({}, null, "/");
 	};
 
 	getElem("name").focus();
+	if (localStorage.name) {
+		getElem("name").value = localStorage.name;
+	}
 
 	getElem("gameId").value = window.location.pathname.substring(1);
 
