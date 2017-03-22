@@ -188,8 +188,7 @@ function checkCollisions(game) {
 			if(dist(redPlayer, bluePlayer) <= conf.radius * 2) {
 				if(redPlayer.x + bluePlayer.x > conf.width
 					&& bluePlayer.frozen == 0
-					&& bluePlayer.dx != 0
-					&& bluePlayer.dy != 0
+					&& (bluePlayer.dx != 0 || bluePlayer.dy != 0)
 				) {
 					redPlayer.x = conf.flag.offset / 2;
 					redPlayer.y = conf.height / 2;
@@ -201,8 +200,7 @@ function checkCollisions(game) {
 				}
 				else if(redPlayer.x + bluePlayer.x < conf.width
 					&& redPlayer.frozen == 0
-					&& redPlayer.dx != 0
-					&& redPlayer.dy != 0
+					&& (redPlayer.dx != 0 || redPlayer.dy != 0)
 				) {
 					bluePlayer.x = conf.width - conf.flag.offset / 2;
 					bluePlayer.y = conf.height / 2;
