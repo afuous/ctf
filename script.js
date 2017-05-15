@@ -34,6 +34,12 @@
 
 	var fps = 60;
 
+	function setBorder(size) {
+		canvas.style.border = size + "px solid black";
+	}
+	var borderSize = 6;
+	setBorder(borderSize);
+
 	document.oncontextmenu = function() {
 		return false;
 	};
@@ -150,9 +156,6 @@
 			window.history.pushState({}, null, "/" + gameId);
 		}
 		conf = obj.conf;
-		canvas.width = conf.width;
-		canvas.height = conf.height;
-		getElem("table").width = conf.width;
 		show("gameScreen", "stats");
 		clearInterval(interval);
 		interval = setInterval(function() {
@@ -166,7 +169,7 @@
 	});
 
 	socket.on("disconnect", function() {
-		show("intoScreen", "name");
+		show("introScreen", "name");
 		clearInterval(interval);
 		playing = false;
 	});
@@ -191,13 +194,39 @@
 	}
 
 	function draw() {
-		ctx.clearRect(0, 0, conf.width, conf.height);
+
+		canvas.width = window.innerWidth * 0.9;
+		canvas.height = canvas.width * conf.height / conf.width;
+
+		var maxHeight = window.innerHeight;
+		maxHeight -= getElem("stats").clientHeight;
+		maxHeight -= getElem("table").clientHeight;
+		maxHeight -= getElem("gameIdDisplay").clientHeight;
+		maxHeight -= 130;
+		if (canvas.height > maxHeight) {
+			canvas.width *= maxHeight / canvas.height;
+			canvas.height = maxHeight;
+		}
+
+		getElem("table").width = canvas.width;
+		var scale = canvas.width / conf.width;
+		function fillRect(x, y, w, h) {
+			return ctx.fillRect(x * scale, y * scale, w * scale, h * scale);
+		}
+		function fillCircle(x, y, r) {
+			return ctx.fillCircle(x * scale, y * scale, r * scale);
+		}
+
+		setBorder(borderSize * scale);
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
 		ctx.fillStyle = "black";
-		ctx.fillRect(conf.width / 2 - 3, 0, 6, conf.height);
+		fillRect(conf.width / 2 - 3, 0, borderSize, conf.height);
 		ctx.fillStyle = "red";
-		ctx.fillCircle(conf.flag.offset + conf.flag.radius, conf.height / 2, conf.flag.radius);
+		fillCircle(conf.flag.offset + conf.flag.radius, conf.height / 2, conf.flag.radius);
 		ctx.fillStyle = "blue";
-		ctx.fillCircle(conf.width - conf.flag.offset - conf.flag.radius, conf.height / 2, conf.flag.radius);
+		fillCircle(conf.width - conf.flag.offset - conf.flag.radius, conf.height / 2, conf.flag.radius);
 		var redFlagTaken = false;
 		var blueFlagTaken = false;
 		for (var i = 0; i < players.length; i++) {
@@ -207,28 +236,28 @@
 		}
 		ctx.fillStyle = "black";
 		if (!redFlagTaken) {
-			ctx.fillCircle(conf.flag.offset + conf.flag.radius, conf.height / 2, conf.flag.radius / 2);
+			fillCircle(conf.flag.offset + conf.flag.radius, conf.height / 2, conf.flag.radius / 2);
 		}
 		if (!blueFlagTaken) {
-			ctx.fillCircle(conf.width - conf.flag.offset - conf.flag.radius, conf.height / 2, conf.flag.radius / 2);
+			fillCircle(conf.width - conf.flag.offset - conf.flag.radius, conf.height / 2, conf.flag.radius / 2);
 		}
 		var table = document.createElement("table");
 		table.appendChild(getRow(["", "Scores", "Tags", "Tagged", "Rating"]));
 		for (var i = 0; i < players.length; i++) {
 			var player = players[i];
 			ctx.fillStyle = player.isSelf ? "black" : (player.team == RED ? "red" : "blue");
-			ctx.fillCircle(player.x, player.y, conf.radius);
+			fillCircle(player.x, player.y, conf.radius);
 			if (player.isSelf) {
 				ctx.fillStyle = player.team == RED ? "red" : "blue";
 				if (!player.hasFlag) {
-					ctx.fillCircle(player.x, player.y, conf.radius / 2);
+					fillCircle(player.x, player.y, conf.radius / 2);
 				}
 			} else {
 				ctx.fillStyle = "black";
 				if (player.hasFlag) {
-					ctx.fillCircle(player.x, player.y, conf.radius / 2);
+					fillCircle(player.x, player.y, conf.radius / 2);
 				}
-				ctx.font = "14px Arial";
+				ctx.font = 14 * scale + "px Arial";
 				ctx.textAlign = "center";
 				var x = player.x;
 				var y = player.y;
@@ -246,7 +275,7 @@
 					x = conf.width - 5;
 					ctx.textAlign = "right";
 				}
-				ctx.fillText(player.name, x, y);
+				ctx.fillText(player.name, x * scale, y * scale);
 			}
 			rating = 2 * player.scores + player.tags - 2 * player.tagged;
 			table.appendChild(getRow([player.name, player.scores, player.tags, player.tagged, rating], player.team == RED ? "#ffdddd" : "#ddddff"));

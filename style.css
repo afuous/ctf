@@ -50,7 +50,3 @@ body {
 .hidden {
 	display: none;
 }
-
-.gameCanvas {
-	border: 6px solid black;
-}
