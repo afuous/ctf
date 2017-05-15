@@ -169,7 +169,7 @@
 	});
 
 	socket.on("disconnect", function() {
-		show("introScreen", "name");
+		show("introScreen", "nameDisplay");
 		clearInterval(interval);
 		playing = false;
 	});

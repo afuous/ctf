@@ -6,16 +6,17 @@ let fs = require("fs");
 let url = require("url");
 let physics = require("./physics");
 
-let staticPages = [
-	"script.js",
-	"physics.js",
-	"socketio.js",
-	"style.css",
-];
+let staticPages = {
+	"/": "index.html",
+	"/script.js": "script.js",
+	"/physics.js": "physics.js",
+    "/socketio.js": "node_modules/socket.io-client/dist/socket.io.slim.js",
+	"/style.css": "style.css",
+};
 
 let server = http.createServer(function(req, res) {
-	let path = url.parse(req.url).pathname.substring(1);
-	let file = staticPages.indexOf(path) != -1 ? path : "index.html";
+	let path = url.parse(req.url).pathname;
+	let file = staticPages[path] || "index.html";
 	fs.createReadStream(require("path").join(__dirname, file)).pipe(res);
 });
 server.listen(process.argv[2] || 80);
