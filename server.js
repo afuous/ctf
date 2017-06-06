@@ -10,7 +10,7 @@ let staticPages = {
 	"/": "index.html",
 	"/script.js": "script.js",
 	"/physics.js": "physics.js",
-    "/socketio.js": "node_modules/socket.io-client/dist/socket.io.slim.js",
+	"/socketio.js": "node_modules/socket.io-client/dist/socket.io.slim.js",
 	"/style.css": "style.css",
 };
 
@@ -82,7 +82,7 @@ function createPlayer(socket, name, team) {
 }
 
 function getToken() {
-	return Array(8).fill()
+	return Array(6).fill()
 		.map(() => String.fromCharCode(Math.floor(Math.random() * 26) + 97))
 		.join("");
 }

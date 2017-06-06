@@ -137,7 +137,7 @@
 			"joinPrivateScreen",
 			"createPrivateScreen",
 			"gameScreen",
-			"stats",
+			"toprow",
 			"nameDisplay",
 		];
 		for (var i = 0; i < allScreens.length; i++) {
@@ -156,7 +156,7 @@
 			window.history.pushState({}, null, "/" + gameId);
 		}
 		conf = obj.conf;
-		show("gameScreen", "stats");
+		show("gameScreen", "toprow");
 		clearInterval(interval);
 		interval = setInterval(function() {
 			while (lastUpdate + conf.tickTime < Date.now()) {
@@ -199,16 +199,15 @@
 		canvas.height = canvas.width * conf.height / conf.width;
 
 		var maxHeight = window.innerHeight;
-		maxHeight -= getElem("stats").clientHeight;
-		maxHeight -= getElem("table").clientHeight;
-		maxHeight -= getElem("gameIdDisplay").clientHeight;
-		maxHeight -= 130;
+		maxHeight -= getElem("toprow").clientHeight;
+		maxHeight -= 30;
 		if (canvas.height > maxHeight) {
 			canvas.width *= maxHeight / canvas.height;
 			canvas.height = maxHeight;
 		}
+		canvas.style.top = getElem("toprow").clientHeight + (maxHeight - canvas.height) / 2;
+		canvas.style.marginLeft = -canvas.width / 2;
 
-		getElem("table").width = canvas.width;
 		var scale = canvas.width / conf.width;
 		function fillRect(x, y, w, h) {
 			return ctx.fillRect(x * scale, y * scale, w * scale, h * scale);
