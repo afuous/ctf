@@ -12,7 +12,7 @@ body {
 	user-select: all;
 }
 
-.toprow {
+.topRow {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -44,7 +44,29 @@ body {
 
 .gameCanvas {
 	position: absolute;
-	left: 50%;
+}
+
+.chat {
+	position: absolute;
+	width: 300px;
+}
+
+.chatInput {
+	width: 100%;
+	position: absolute;
+	bottom: 0;
+}
+
+.chatMessages {
+	word-wrap: break-word;
+	border-top: 1px solid gray;
+	border-left: 1px solid gray;
+	border-right: 1px solid gray;
+	overflow-y: auto;
+	padding-top: 3px;
+	padding-left: 3px;
+	padding-right: 3px;
+	padding-bottom: 10px;
 }
 
 .shown {

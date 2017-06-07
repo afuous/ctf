@@ -47,6 +47,7 @@
 	var keys = {};
 	window.onkeydown = function(event) {
 		if (!playing) return;
+		if (getElem("chatInput") == document.activeElement) return;
 		var key = (event || window.event).keyCode;
 		if (keys[key]) return;
 		keys[key] = true;
@@ -67,6 +68,8 @@
 	window.onkeyup = function(event) {
 		if (!playing) return;
 		var key = (event || window.event).keyCode;
+		if (getElem("chatInput") == document.activeElement) return;
+		if (!keys[key]) return;
 		keys[key] = false;
 		if (key == 37 || key == 65) {
 			physics.keyUp(getSelf(), LEFT);
@@ -80,6 +83,8 @@
 		} else if (key == 40 || key == 83) {
 			physics.keyUp(getSelf(), DOWN);
 			socket.emit("keyUp", DOWN);
+		} else if (key == 84) {
+			getElem("chatInput").focus();
 		}
 	};
 
@@ -137,8 +142,9 @@
 			"joinPrivateScreen",
 			"createPrivateScreen",
 			"gameScreen",
-			"toprow",
+			"topRow",
 			"nameDisplay",
+			"chat",
 		];
 		for (var i = 0; i < allScreens.length; i++) {
 			getElem(allScreens[i]).style.display = "none";
@@ -156,14 +162,16 @@
 			window.history.pushState({}, null, "/" + gameId);
 		}
 		conf = obj.conf;
-		show("gameScreen", "toprow");
+		show("gameScreen", "topRow", "chat");
 		clearInterval(interval);
 		interval = setInterval(function() {
 			while (lastUpdate + conf.tickTime < Date.now()) {
 				physics.run(players, conf);
 				lastUpdate += conf.tickTime;
 			}
-			requestAnimationFrame(draw);
+			if (document.hasFocus()) {
+				requestAnimationFrame(draw);
+			}
 		}, 1000 / fps);
 		lastUpdate = Date.now();
 	});
@@ -181,6 +189,42 @@
 		lastUpdate = lastUpdate;
 	});
 
+	getElem("chatForm").onsubmit = function() {
+		var chatInput = getElem("chatInput");
+		socket.emit("message", chatInput.value);
+		chatInput.value = "";
+		chatInput.blur();
+	};
+
+	function sanitize(str) {
+		return str
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;");
+	}
+
+	socket.on("message", function(obj) {
+		var sender;
+		for (var i = 0; i < players.length; i++) {
+			if (players[i].name == obj.author) {
+				sender = players[i];
+			}
+		}
+		if (!sender) return;
+		var color = sender.team == RED ? "red" : "blue";
+		var author = sanitize(obj.author);
+		var content = sanitize(obj.content);
+		var messages = getElem("chatMessages");
+		var span = document.createElement("span");
+		span.innerHTML = "<font color='" + color + "'><b>" + author + "</b> " + content + "</font><br>";
+		messages.appendChild(span);
+		if (messages.scrollHeight > messages.clientHeight) {
+			if (messages.scrollTop + messages.clientHeight + 100 > messages.scrollHeight) {
+				messages.scrollTop = messages.scrollHeight - messages.clientHeight;
+			}
+		}
+	});
+
 	var players = [];
 	var interval;
 	var conf;
@@ -195,18 +239,25 @@
 
 	function draw() {
 
-		canvas.width = window.innerWidth * 0.9;
+		var chat = getElem("chat");
+		var topRow = getElem("topRow");
+
+		chat.style.top = topRow.clientHeight + 30;
+		getElem("chatMessages").style.height = window.innerHeight - 100
+			- getElem("topRow").clientHeight - getElem("chatInput").clientHeight;
+
+		canvas.width = (window.innerWidth - chat.clientWidth) * 0.9;
 		canvas.height = canvas.width * conf.height / conf.width;
 
 		var maxHeight = window.innerHeight;
-		maxHeight -= getElem("toprow").clientHeight;
+		maxHeight -= topRow.clientHeight;
 		maxHeight -= 30;
 		if (canvas.height > maxHeight) {
 			canvas.width *= maxHeight / canvas.height;
 			canvas.height = maxHeight;
 		}
-		canvas.style.top = getElem("toprow").clientHeight + (maxHeight - canvas.height) / 2;
-		canvas.style.marginLeft = -canvas.width / 2;
+		canvas.style.top = topRow.clientHeight + (maxHeight - canvas.height) / 2;
+		canvas.style.left = (window.innerWidth + chat.clientWidth - canvas.width) / 2;
 
 		var scale = canvas.width / conf.width;
 		function fillRect(x, y, w, h) {
@@ -293,7 +344,7 @@
 			var td = document.createElement("td");
 			td.width = "100";
 			td.style.fontSize = "16px";
-			td.innerHTML = String(cells[i]).replace("<", "&lt").replace(">", "&gt");
+			td.innerHTML = sanitize(String(cells[i]));
 			tr.appendChild(td);
 		}
 		return tr;

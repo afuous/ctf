@@ -331,6 +331,16 @@ io.listen(server).on("connection", function(socket) {
 		player = null;
 	});
 
+	socket.on("message", function(content) {
+		if (content.replace(/\s/g, "").length == 0) return;
+		for (let recipient of getPlayers(game)) {
+			recipient.socket.emit("message", {
+				author: player.name,
+				content: content,
+			});
+		}
+	});
+
 	socket.on("keyDown", function(dir) {
 		if (!game || !player) return;
 		physics.keyDown(player, dir);

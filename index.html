@@ -6,7 +6,7 @@
 		<script type="text/javascript" src="physics.js"></script>
 	</head>
 	<body>
-		<div class="toprow" id="toprow">
+		<div class="topRow" id="topRow">
 			<table width="100%">
 				<tr>
 					<td class="top"><div id="stats"></div></td>
@@ -40,6 +40,15 @@
 				</td>
 			</tr>
 		</table>
+		<div id="chat" class="chat hidden">
+			<b style="font-size: 20;">Chat</b><br>
+			<div id="chatMessages" class="chatMessages">
+			</div>
+			<form id="chatForm" action="javascript:void(0);">
+				<input type="text" id="chatInput" class="chatInput" autocomplete="off" />
+				<input type="submit" class="hidden" />
+			</form>
+		</div>
 		<div id="gameScreen" class="hidden">
 			<canvas id="canvas" class="gameCanvas"></canvas>
 		</div>
