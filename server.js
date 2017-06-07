@@ -34,6 +34,7 @@ const conf = {
 	},
 	freezeTime: 5000, // ms
 	tickTime: 10, // ms
+	flagTime: 10000, // ms
 }
 
 const LEFT = 0;
@@ -78,6 +79,7 @@ function createPlayer(socket, name, team) {
 		scores: 0,
 		tags: 0,
 		tagged: 0,
+		flagTime: 0,
 	};
 }
 
@@ -101,6 +103,7 @@ function update(game) {
 				vert: p.vert,
 				team: p.team,
 				frozen: p.frozen,
+				flagTime: p.flagTime,
 				hasFlag: p.hasFlag,
 				scores: p.scores,
 				tags: p.tags,
@@ -148,6 +151,7 @@ function checkCollisions(game) {
 						player1.hasFlag = false;
 						player2.hasFlag = true;
 						player2.touching = player1;
+						player2.flagTime = conf.flagTime;
 						update(game);
 					}
 				}
@@ -160,6 +164,7 @@ function checkCollisions(game) {
 		if(dist({x: conf.width - conf.flag.offset - conf.flag.radius, y: conf.height / 2}, redPlayer) < conf.flag.radius + conf.radius) {
 			if(!game.red.some(player => player.hasFlag)) {
 				redPlayer.hasFlag = true;
+				redPlayer.flagTime = conf.flagTime;
 				update(game);
 			}
 		}
@@ -169,11 +174,16 @@ function checkCollisions(game) {
 			redPlayer.scores++;
 			update(game);
 		}
+		if (redPlayer.hasFlag && redPlayer.flagTime <= 0) {
+			freezeRed(redPlayer);
+			update(game);
+		}
 	}
 	for(let bluePlayer of game.blue) {
 		if(dist({x: conf.flag.offset + conf.flag.radius, y: conf.height / 2}, bluePlayer) < conf.flag.radius + conf.radius) {
 			if(!game.blue.some(player => player.hasFlag)) {
 				bluePlayer.hasFlag = true;
+				bluePlayer.flagTime = conf.flagTime;
 				update(game);
 			}
 		}
@@ -183,6 +193,24 @@ function checkCollisions(game) {
 			bluePlayer.scores++;
 			update(game);
 		}
+		if (bluePlayer.hasFlag && bluePlayer.flagTime <= 0) {
+			freezeBlue(bluePlayer);
+			update(game);
+		}
+	}
+	function freezeRed(redPlayer) {
+		redPlayer.x = conf.flag.offset / 2;
+		redPlayer.y = conf.height / 2;
+		redPlayer.dx = redPlayer.dy = 0;
+		redPlayer.frozen = conf.freezeTime;
+		redPlayer.hasFlag = false;
+	}
+	function freezeBlue(bluePlayer) {
+		bluePlayer.x = conf.width - conf.flag.offset / 2;
+		bluePlayer.y = conf.height / 2;
+		bluePlayer.dx = bluePlayer.dy = 0;
+		bluePlayer.frozen = conf.freezeTime;
+		bluePlayer.hasFlag = false;
 	}
 	for(let redPlayer of game.red) {
 		for(let bluePlayer of game.blue) {
@@ -191,11 +219,7 @@ function checkCollisions(game) {
 					&& bluePlayer.frozen == 0
 					&& (bluePlayer.dx != 0 || bluePlayer.dy != 0)
 				) {
-					redPlayer.x = conf.flag.offset / 2;
-					redPlayer.y = conf.height / 2;
-					redPlayer.dx = redPlayer.dy = 0;
-					redPlayer.frozen = conf.freezeTime;
-					redPlayer.hasFlag = false;
+					freezeRed(redPlayer);
 					redPlayer.tagged++;
 					bluePlayer.tags++;
 				}
@@ -203,11 +227,7 @@ function checkCollisions(game) {
 					&& redPlayer.frozen == 0
 					&& (redPlayer.dx != 0 || redPlayer.dy != 0)
 				) {
-					bluePlayer.x = conf.width - conf.flag.offset / 2;
-					bluePlayer.y = conf.height / 2;
-					bluePlayer.dx = bluePlayer.dy = 0;
-					bluePlayer.frozen = conf.freezeTime;
-					bluePlayer.hasFlag = false;
+					freezeBlue(bluePlayer);
 					bluePlayer.tagged++;
 					redPlayer.tags++;
 				}

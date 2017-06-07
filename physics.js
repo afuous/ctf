@@ -11,6 +11,9 @@ function run(players, conf) {
 			player.frozen -= conf.tickTime;
 			continue;
 		}
+		if (player.flagTime > 0) {
+			player.flagTime -= conf.tickTime;
+		}
 		if(player.horiz == LEFT) {
 			player.dx -= player.dx < 0 ? conf.accel : conf.decel;
 		}
