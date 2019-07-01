@@ -1,10 +1,11 @@
 "use strict";
 
-let http = require("http");
-let io = require("socket.io");
 let fs = require("fs");
 let url = require("url");
 let physics = require("./physics");
+
+let ctf = {};
+module.exports = ctf;
 
 let staticPages = {
 	"/": "index.html",
@@ -14,12 +15,11 @@ let staticPages = {
 	"/style.css": "style.css",
 };
 
-let server = http.createServer(function(req, res) {
+ctf.app = function(req, res) {
 	let path = url.parse(req.url).pathname;
 	let file = staticPages[path] || "index.html";
 	fs.createReadStream(require("path").join(__dirname, file)).pipe(res);
-});
-server.listen(process.argv[2] || 80);
+};
 
 const conf = {
 	width: 1200,
@@ -237,7 +237,7 @@ function checkCollisions(game) {
 	}
 }
 
-io.listen(server).on("connection", function(socket) {
+ctf.sioOnConnection = function(socket) {
 
 	let game;
 	let player;
@@ -353,4 +353,4 @@ io.listen(server).on("connection", function(socket) {
 		update(game);
 	});
 
-});
+};
