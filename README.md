@@ -1,2 +1,2 @@
 # ctf
-A two team capture the flag game made with node.js and HTML5
+A two team capture the flag game

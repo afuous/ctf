@@ -16,27 +16,20 @@
 				</tr>
 			</table>
 		</div>
-		<table width="100%" height="100%">
+		<table id="introScreen">
 			<tr>
-				<td align="center" valign="middle">
-					<div id="nameDisplay">
-						Name: <input id="name" type="text" /><br>
-						<br>
-					</div>
-					<div id="introScreen" class="shown">
-						<input id="introJoinPrivate" type="button" value="Join a private game" /><br>
-						<br>
-						<input id="introCreatePrivate" type="button" value="Create a private game" /><br>
-						<br>
-						<input id="joinPublic" type="button" value="Join a public game" />
-					</div>
-					<div id="joinPrivateScreen" class="hidden">
-						Game ID: <input id="gameId" type="text" />
-						<input id="joinPrivate" type="button" value="Join" />
-					</div>
-					<div id="createPrivateScreen" class="hidden">
-						<input id="createPrivate" type="button" value="Create" />
-					</div>
+				<td align="center" valign="middle" colspan="2">
+					Name: <input id="name" type="text" /><br>
+					<br>
+				</td>
+			</tr>
+			<tr>
+				<td align="center" valign="middle" width="50%">
+					<input id="create" type="button" value="Create a game" /><br>
+				</td>
+				<td align="center" valign="middle" width="50%">
+					Game ID: <input id="gameId" type="text" />
+					<input id="join" type="button" value="Join game" />
 				</td>
 			</tr>
 		</table>

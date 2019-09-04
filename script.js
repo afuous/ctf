@@ -88,37 +88,23 @@
 		}
 	};
 
-	getElem("introJoinPrivate").onclick = function() {
-		show("joinPrivateScreen", "nameDisplay");
-	};
-
-	getElem("introCreatePrivate").onclick = function() {
-		show("createPrivateScreen", "nameDisplay");
-	};
-
 	function getName() {
 		var name = getElem("name").value;
 		localStorage.name = name;
 		return name;
 	}
 
-	getElem("joinPrivate").onclick = function() {
-		socket.emit("joinPrivate", {
+	getElem("join").onclick = function() {
+		socket.emit("join", {
 			gameId: getElem("gameId").value,
 			name: getName(),
 		});
 		return false;
 	};
-	getElem("createPrivate").onclick = function() {
-		socket.emit("createPrivate", {
+	getElem("create").onclick = function() {
+		socket.emit("create", {
 			name: getName(),
 		});
-	};
-	getElem("joinPublic").onclick = function() {
-		socket.emit("joinPublic", {
-			name: getName(),
-		});
-		window.history.pushState({}, null, "/");
 	};
 
 	getElem("name").focus();
@@ -139,11 +125,8 @@
 	function show() {
 		var allScreens = [
 			"introScreen",
-			"joinPrivateScreen",
-			"createPrivateScreen",
 			"gameScreen",
 			"topRow",
-			"nameDisplay",
 			"chat",
 		];
 		for (var i = 0; i < allScreens.length; i++) {

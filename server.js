@@ -47,10 +47,7 @@ const RED = 0;
 const BLUE = 1;
 
 // TODO: maybe give all players an id
-let privateGames = {};
-let nextPublicGame = null;
-let publicGames = {};
-let publicGameUid = 0;
+let games = {};
 
 function createGame() {
 	return {
@@ -84,8 +81,8 @@ function createPlayer(socket, name, team) {
 }
 
 function getToken() {
-	return Array(6).fill()
-		.map(() => String.fromCharCode(Math.floor(Math.random() * 26) + 97))
+	return Array(4).fill()
+		.map(() => String.fromCharCode(Math.floor(Math.random() * 10) + "0".charCodeAt(0)))
 		.join("");
 }
 
@@ -122,10 +119,9 @@ function getPlayers(game) {
 }
 
 setInterval(function() {
-	let games = Object.keys(privateGames).map(key => privateGames[key])
-		.concat(Object.keys(publicGames).map(key => publicGames[key]));
-	for (let game of games) {
-		while(game.lastUpdate + conf.tickTime < Date.now()) {
+	for (let key of Object.keys(games)) {
+		let game = games[key];
+		while (game.lastUpdate + conf.tickTime < Date.now()) {
 			physics.run(getPlayers(game), conf);
 			checkCollisions(game);
 			game.lastUpdate += conf.tickTime;
@@ -242,52 +238,26 @@ ctf.sioOnConnection = function(socket) {
 	let game;
 	let player;
 
-	socket.on("createPrivate", function(obj) {
+	socket.on("create", function(obj) {
 		let gameId;
 		do {
 			gameId = getToken();
-		} while (gameId in privateGames);
+		} while (gameId in games);
 		game = createGame();
-		game.isPublic = false;
 		game.id = gameId;
-		privateGames[gameId] = game;
-		joinPrivate(obj.name);
+		games[gameId] = game;
+		join(obj.name);
 		// TODO: if invalid name, game will still be created
 	});
 
-	socket.on("joinPrivate", function(obj) {
-		game = privateGames[obj.gameId];
+	socket.on("join", function(obj) {
+		game = games[obj.gameId];
 		if (!game) {
 			socket.emit("invalidGameId", {
 				message: "A game with that ID was not found",
 			});
 		} else {
-			joinPrivate(obj.name);
-		}
-	});
-
-	socket.on("joinPublic", function(obj) {
-		if (!nextPublicGame) {
-			nextPublicGame = createGame();
-			nextPublicGame.isPublic = true;
-		}
-		game = nextPublicGame;
-		let name = checkName(obj.name);
-		if (!name) return;
-		let team = game.red.length <= game.blue.length ? RED : BLUE;
-		player = createPlayer(socket, name, team);
-		(team == RED ? game.red : game.blue).push(player);
-		socket.emit("start", {
-			conf: conf,
-		});
-		update(game);
-		let playersPerTeam = 2;
-		if (nextPublicGame.red.length == playersPerTeam && nextPublicGame.blue.length == playersPerTeam) {
-			nextPublicGame.id = publicGameUid++;
-			publicGames[nextPublicGame.id] = nextPublicGame;
-			nextPublicGame = null;
-			// actually start
-			// anything for else?
+			join(obj.name);
 		}
 	});
 
@@ -305,7 +275,7 @@ ctf.sioOnConnection = function(socket) {
 		return name;
 	}
 
-	function joinPrivate(name) {
+	function join(name) {
 		name = checkName(name);
 		if (!name) return;
 		let team = game.red.length <= game.blue.length ? RED : BLUE;
@@ -323,7 +293,7 @@ ctf.sioOnConnection = function(socket) {
 		game.red = game.red.filter(p => p != player);
 		game.blue = game.blue.filter(p => p != player);
 		if (game.red.length == 0 && game.blue.length == 0) {
-			delete privateGames[game.id];
+			delete games[game.id];
 		} else {
 			update(game);
 		}
