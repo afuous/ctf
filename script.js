@@ -1,10 +1,41 @@
 (function() {
 
+	var ws;
+	if (location.protocol.startsWith("https")) {
+		ws = new WebSocket("wss://" + location.host);
+	} else {
+		ws = new WebSocket("ws://" + location.host);
+	}
+	function getSocket(ws) {
+		let listeners = {};
+		ws.onmessage = function(event) {
+			let obj = JSON.parse(event.data);
+			if (listeners[obj.type]) {
+				listeners[obj.type](obj.data);
+			} else {
+				console.error("Listener not found: " + obj.type);
+			}
+		};
+		return {
+			on: function(type, func) {
+				listeners[type] = func;
+			},
+			emit: function(type, data) {
+				ws.send(JSON.stringify({
+					type: type,
+					data: data,
+				}));
+			},
+		};
+	}
+	var socket = getSocket(ws);
+
+
+
+
 	var getElem = function(id) {
 		return document.getElementById(id);
 	};
-
-	var socket = io.connect();
 
 	var canvas = getElem("canvas");
 	var ctx = canvas.getContext("2d");

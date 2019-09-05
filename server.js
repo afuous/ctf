@@ -11,7 +11,6 @@ let staticPages = {
 	"/": "index.html",
 	"/script.js": "script.js",
 	"/physics.js": "physics.js",
-	"/socketio.js": "node_modules/socket.io-client/dist/socket.io.slim.js",
 	"/style.css": "style.css",
 };
 
@@ -233,7 +232,36 @@ function checkCollisions(game) {
 	}
 }
 
-ctf.sioOnConnection = function(socket) {
+function getSocket(ws) {
+	let listeners = {};
+	ws.on("message", function(str) {
+		let obj = JSON.parse(str);
+		if (listeners[obj.type]) {
+			listeners[obj.type](obj.data);
+		} else {
+			console.error("Listener not found: " + obj.type);
+		}
+	});
+	ws.on("close", function() {
+		if (listeners["disconnect"]) {
+			listeners["disconnect"]();
+		}
+	});
+	return {
+		on: function(type, func) {
+			listeners[type] = func;
+		},
+		emit: function(type, data) {
+			ws.send(JSON.stringify({
+				type: type,
+				data: data,
+			}));
+		},
+	};
+}
+
+ctf.wsOnConnection = function(ws) {
+	let socket = getSocket(ws);
 
 	let game;
 	let player;
